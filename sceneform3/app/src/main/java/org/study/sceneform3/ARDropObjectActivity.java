@@ -1,47 +1,31 @@
 package org.study.sceneform3;
 
 import android.app.AlertDialog;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.Anchor;
-import com.google.ar.core.AugmentedImage;
-import com.google.ar.core.AugmentedImageDatabase;
-import com.google.ar.core.Config;
 import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
-import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
 import com.google.ar.sceneform.AnchorNode;
-import com.google.ar.sceneform.FrameTime;
 import com.google.ar.sceneform.rendering.ModelRenderable;
-import com.google.ar.sceneform.rendering.Renderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
-import android.util.Log;
-import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.Toast;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.util.Collection;
 import java.util.List;
 
 public class ARDropObjectActivity extends AppCompatActivity {
@@ -79,12 +63,6 @@ public class ARDropObjectActivity extends AppCompatActivity {
         });
         modelLoader = new ModelLoader(new WeakReference<>(this));
         initializeGallery();
-    }
-
-    private void arOnReferenceImage() {
-        arFragment = (CustomArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
-        arFragment.getPlaneDiscoveryController().hide();
-        arFragment.getArSceneView().getScene().addOnUpdateListener(this::onUpdateFrame);
     }
 
     @Override
@@ -189,61 +167,11 @@ public class ARDropObjectActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
         dialog.show();
         return;
-    }/*    public void startAnimation(TransformableNode node, ModelRenderable renderable){ if(renderable==null || renderable.getAnimationDataCount() == 0) { return; } for(int i = 0;i < renderable.getAnimationDataCount();i++){ AnimationData animationData = renderable.getAnimationData(i); } ModelAnimator animator = new ModelAnimator(renderable.getAnimationData(0), renderable); animator.start(); node.setOnTapListener( (hitTestResult, motionEvent) -> { togglePauseAndResume(animator); }); } public void togglePauseAndResume(ModelAnimator animator) { if (animator.isPaused()) { animator.resume(); } else if (animator.isStarted()) { animator.pause(); } else { animator.start(); } }*/
-
-    public boolean setupAugmentedImagesDb(Config config, Session session) {
-        AugmentedImageDatabase augmentedImageDatabase;
-        Bitmap bitmap = loadAugmentedImage();
-        if (bitmap == null) {
-            return false;
-        }
-        augmentedImageDatabase = new AugmentedImageDatabase(session);
-        augmentedImageDatabase.addImage("world", bitmap);
-        config.setAugmentedImageDatabase(augmentedImageDatabase);
-        return true;
     }
 
-    private Bitmap loadAugmentedImage() {
-        try (InputStream is = getAssets().open("world.jpg")) {
-            return BitmapFactory.decodeStream(is);
-        } catch (IOException e) {
-            Log.e("ImageLoad", "IO Exception", e);
-        }
-        return null;
-    }
+    /*    public void startAnimation(TransformableNode node, ModelRenderable renderable){ if(renderable==null || renderable.getAnimationDataCount() == 0) { return; } for(int i = 0;i < renderable.getAnimationDataCount();i++){ AnimationData animationData = renderable.getAnimationData(i); } ModelAnimator animator = new ModelAnimator(renderable.getAnimationData(0), renderable); animator.start(); node.setOnTapListener( (hitTestResult, motionEvent) -> { togglePauseAndResume(animator); }); } public void togglePauseAndResume(ModelAnimator animator) { if (animator.isPaused()) { animator.resume(); } else if (animator.isStarted()) { animator.pause(); } else { animator.start(); } }*/
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private void onUpdateFrame(FrameTime frameTime) {
-        Frame frame = arFragment.getArSceneView().getArFrame();
-        Collection<AugmentedImage> augmentedImages = frame.getUpdatedTrackables(AugmentedImage.class);
-        for (AugmentedImage augmentedImage : augmentedImages) {
-            if (augmentedImage.getTrackingState() == TrackingState.TRACKING) {
-                if (augmentedImage.getName().equals("world") && shouldAddModel) {
-                    placeObject(arFragment, augmentedImage.createAnchor(augmentedImage.getCenterPose()), Uri.parse("Mesh_BengalTiger.sfb"));
-                    shouldAddModel = false;
-                }
-            }
-        }
-    }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private void placeObject(ArFragment arFragment, Anchor anchor, Uri uri) {
-        ModelRenderable.builder()
-                .setSource(arFragment.getContext(), uri)
-                .build()
-                .thenAccept(modelRenderable -> addNodeToScene(arFragment, anchor, modelRenderable))
-                .exceptionally(throwable -> {
-                    Toast.makeText(arFragment.getContext(), "Error:" + throwable.getMessage(), Toast.LENGTH_LONG).show();
-                    return null;
-                });
-    }
 
-    private void addNodeToScene(ArFragment arFragment, Anchor anchor, Renderable renderable) {
-        AnchorNode anchorNode = new AnchorNode(anchor);
-        TransformableNode node = new TransformableNode(arFragment.getTransformationSystem());
-        node.setRenderable(renderable);
-        node.setParent(anchorNode);
-        arFragment.getArSceneView().getScene().addChild(anchorNode);
-        node.select();
-    }
+
 }
