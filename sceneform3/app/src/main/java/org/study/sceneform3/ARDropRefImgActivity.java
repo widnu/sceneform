@@ -30,12 +30,21 @@ import java.io.InputStream;
 import java.util.Collection;
 
 public class ARDropRefImgActivity extends AppCompatActivity {
+
+    private String tryOnItemName = "";
+
     ArFragment arFragment;
     boolean shouldAddModel = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ardroprefimg);
+
+        // get parameters
+        tryOnItemName = "Ring_POP";
+
+        // manage AR Fragment
         arFragment = (CustomArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment_refimg);
         arFragment.getPlaneDiscoveryController().hide();
         arFragment.getArSceneView().getScene().addOnUpdateListener(this::onUpdateFrame);
@@ -52,14 +61,15 @@ public class ARDropRefImgActivity extends AppCompatActivity {
                         }
                 );
     }
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void onUpdateFrame(FrameTime frameTime) {
         Frame frame = arFragment.getArSceneView().getArFrame();
         Collection<AugmentedImage> augmentedImages = frame.getUpdatedTrackables(AugmentedImage.class);
         for (AugmentedImage augmentedImage : augmentedImages) {
             if (augmentedImage.getTrackingState() == TrackingState.TRACKING) {
-                if (augmentedImage.getName().equals("ref_image") && shouldAddModel) {
-                    placeObject(arFragment, augmentedImage.createAnchor(augmentedImage.getCenterPose()), Uri.parse("andy_dance.sfb"));
+                if (Constants.LOADED_REF_IMAGE_0.equals(augmentedImage.getName()) && shouldAddModel) {
+                    placeObject(arFragment, augmentedImage.createAnchor(augmentedImage.getCenterPose()), getARObject());
                     shouldAddModel = false;
                 }
             }
@@ -72,25 +82,52 @@ public class ARDropRefImgActivity extends AppCompatActivity {
             return false;
         }
         augmentedImageDatabase = new AugmentedImageDatabase(session);
-        augmentedImageDatabase.addImage("ref_image", bitmap);
+        augmentedImageDatabase.addImage(Constants.LOADED_REF_IMAGE_0, bitmap);
         config.setAugmentedImageDatabase(augmentedImageDatabase);
         return true;
     }
     private Bitmap loadAugmentedImage() {
         try  {
-            InputStream is = getAssets().open("world.jpg");
+            InputStream is = getAssets().open(Constants.LOADED_REF_IMAGE_0);
             return BitmapFactory.decodeStream(is);
         } catch (IOException e) {
             Log.e("ImageLoad", "IO Exception", e);
         }
         return null;
     }
+
     public void addNodeToScene(ArFragment arFragment, Anchor anchor, Renderable renderable) {
         AnchorNode anchorNode = new AnchorNode(anchor);
         TransformableNode node = new TransformableNode(arFragment.getTransformationSystem());
         node.setRenderable(renderable);
+
+        if(tryOnItemName.equals("Watch")){
+            node.getScaleController().setMaxScale(0.15f);
+            node.getScaleController().setMinScale(0.1f);
+        }else if(tryOnItemName.equals("Ring")){
+            node.getScaleController().setMaxScale(0.01f);
+            node.getScaleController().setMinScale(0.005f);
+        }
+        else if(tryOnItemName.equals("Ring_POP")){
+            node.getScaleController().setMaxScale(0.03f);
+            node.getScaleController().setMinScale(0.01f);
+        }
+
         node.setParent(anchorNode);
         arFragment.getArSceneView().getScene().addChild(anchorNode);
         node.select();
+    }
+
+    private Uri getARObject(){
+        String arObjectName = "";
+        if(tryOnItemName.equals("watch")){
+            arObjectName = "1345 Analog Clock.sfb";
+        }else if(tryOnItemName.equals("Ring")){
+            arObjectName = "Ring.sfb";
+        }else if(tryOnItemName.equals("Ring_POP")){
+            arObjectName = "ring pop.sfb";
+        }
+
+        return Uri.parse(arObjectName);
     }
 }
